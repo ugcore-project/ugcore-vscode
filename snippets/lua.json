@@ -1,0 +1,181 @@
+{
+  "Server callback": {
+    "prefix": "ugcallback",
+    "description": "Server: a callback with a schema and a rate limit. Registered as <resource>:<name>.",
+    "body": [
+      "UgCore.Callback.Register('${1:GetData}', {",
+      "\tschema = UgCore.Schema.Define({ ${2:UgCore.Schema.Integer({ min = 1, max = 1000 })} }),",
+      "\trate = { max = ${3:5}, per = ${4:1000} },",
+      "\trequirePlayer = true,",
+      "}, function(source, ${5:value})",
+      "\t${0:return true}",
+      "end)"
+    ]
+  },
+  "Server net event": {
+    "prefix": "ugnet",
+    "description": "Server: a net event with a schema and a rate limit. Registered as <resource>:<name>.",
+    "body": [
+      "UgCore.Network.Register('${1:DoAction}', {",
+      "\tschema = UgCore.Schema.Define({ ${2:UgCore.Schema.String({ min = 1, max = 32 })} }),",
+      "\trate = { max = ${3:5}, per = ${4:1000} },",
+      "\trequirePlayer = true,",
+      "}, function(source, ${5:value})",
+      "\t$0",
+      "end)"
+    ]
+  },
+  "Client callback call": {
+    "prefix": "ugawait",
+    "description": "Client: calls a server callback and waits. MUST run in a thread.",
+    "body": [
+      "local ok, ${1:value}, errorCode = UgCore.Callback.Await('${2:resource}:${3:GetData}'${4})",
+      "",
+      "if not ok then",
+      "\t${5:return}",
+      "end",
+      "$0"
+    ]
+  },
+  "Client net event": {
+    "prefix": "ugtrigger",
+    "description": "Client: triggers a server net event by its full name.",
+    "body": ["UgCore.Network.TriggerServer('${1:resource}:${2:DoAction}'${3})$0"]
+  },
+  "Hook": {
+    "prefix": "ughook",
+    "description": "Server: runs before a core action. Return false to cancel, the payload to change it.",
+    "body": [
+      "UgCore.Hooks.Register(UgCore.Enums.Hooks.${1|Players,Guard,Characters,Accounts,Jobs,Gangs,Sessions,Permissions,Items,Inventory,Weapons,Shops|}.${2:BeforeRevive}, function(payload)",
+      "\t${0:return payload}",
+      "end)"
+    ]
+  },
+  "Event handler": {
+    "prefix": "ugon",
+    "description": "Listens to a ug-core event. Handlers drop ug-core:* events that ug-core did not emit.",
+    "body": [
+      "UgCore.Events.On(UgCore.Enums.Events.${1|Players,Lifecycle,Guard,Characters,Accounts,Jobs,Gangs,Sessions,Commands,Permissions,Items,Inventory,Weapons,Shops|}.${2:Loaded}, function(${3:source})",
+      "\t$0",
+      "end)"
+    ]
+  },
+  "Emit event": {
+    "prefix": "ugemit",
+    "description": "Emits a local event. Names MUST start with this resource's name.",
+    "body": ["UgCore.Events.Emit(('%s:${1:Updated}'):format(GetCurrentResourceName())${2})$0"]
+  },
+  "On ready": {
+    "prefix": "ugready",
+    "description": "Runs once ug-core is Ready, or right away when it already is.",
+    "body": [
+      "UgCore.Lifecycle.On(UgCore.Enums.Lifecycle.Ready, function()",
+      "\t$0",
+      "end)"
+    ]
+  },
+  "Await ready": {
+    "prefix": "ugawaitready",
+    "description": "Waits in a thread until ug-core is Ready.",
+    "body": [
+      "CreateThread(function()",
+      "\tif not UgCore.Lifecycle.Await(UgCore.Enums.Lifecycle.Ready, ${1:30000}) then",
+      "\t\treturn",
+      "\tend",
+      "",
+      "\t$0",
+      "end)"
+    ]
+  },
+  "Schema": {
+    "prefix": "ugschema",
+    "description": "Argument schema for a callback or net event. Strings, arrays and maps MUST declare max.",
+    "body": [
+      "local ${1:schema} = UgCore.Schema.Define({",
+      "\t${2:UgCore.Schema.String({ min = 1, max = 32 })},",
+      "\t${3:UgCore.Schema.Optional(UgCore.Schema.Integer({ min = 1, max = 100 }))},",
+      "})$0"
+    ]
+  },
+  "Schema object": {
+    "prefix": "ugobject",
+    "description": "Strict object rule: unknown keys are rejected, missing fields fail unless Optional.",
+    "body": [
+      "UgCore.Schema.Object({",
+      "\t${1:name} = ${2:UgCore.Schema.String({ min = 1, max = 32 })},",
+      "\t${3:amount} = ${4:UgCore.Schema.Integer({ min = 1, max = 1000 })},",
+      "})$0"
+    ]
+  },
+  "Distance check": {
+    "prefix": "ugnear",
+    "description": "Server: checks the ped position on the server and flags the player when too far.",
+    "body": [
+      "if not UgCore.Guard.IsNear(source, ${1:vector3(0.0, 0.0, 0.0)}, ${2:3.0}) then",
+      "\tUgCore.Guard.Flag(source, UgCore.Enums.Violations.OutOfRange)",
+      "",
+      "\treturn UgCore.Enums.Errors.NoPermission",
+      "end",
+      "$0"
+    ]
+  },
+  "Guard flag": {
+    "prefix": "ugflag",
+    "description": "Server: reports a violation to Guard. Details reach server logs only.",
+    "body": [
+      "UgCore.Guard.Flag(source, UgCore.Enums.Violations.${1|InvalidPayload,RateLimited,OutOfRange,NoPermission,NotLoaded,InvalidDeathState|}, '${2:detail}')$0"
+    ]
+  },
+  "Player": {
+    "prefix": "ugplayer",
+    "description": "Server: the connected player, or a not_loaded result.",
+    "body": [
+      "local player = UgCore.Players.Get(source)",
+      "",
+      "if not player or not player:IsLoaded() then",
+      "\treturn UgCore.Enums.Errors.NotLoaded",
+      "end",
+      "$0"
+    ]
+  },
+  "Result check": {
+    "prefix": "ugresult",
+    "description": "Calls a mutating function and passes its error code on.",
+    "body": [
+      "local ok, errorCode = ${1:UgCore.Players.Revive(source)}",
+      "",
+      "if not ok then",
+      "\treturn ${2:errorCode}",
+      "end",
+      "$0"
+    ]
+  },
+  "Rate limiter": {
+    "prefix": "ugrate",
+    "description": "Server: a token bucket. max is the burst, per the ms to refill an empty bucket.",
+    "body": [
+      "local ${1:limiter} = UgCore.RateLimit.Create({ max = ${2:5}, per = ${3:1000} })",
+      "",
+      "local allowed, retryAfter = ${1:limiter}:Consume(${4:source})$0"
+    ]
+  },
+  "Logger": {
+    "prefix": "uglog",
+    "description": "Logs through ug-core. Debug lines show when core.debug is on.",
+    "body": ["UgCore.Logger.${1|Info,Debug,Warn,Error|}('${2:message %s}', ${3:'value'})$0"]
+  },
+  "Require version": {
+    "prefix": "ugversion",
+    "description": "Raises when ug-core is older than the given version.",
+    "body": ["UgCore.Version.Require('${1:1.0.0}')$0"]
+  },
+  "Module check": {
+    "prefix": "ugmodule",
+    "description": "Runs code only when an optional ug-core module is enabled.",
+    "body": [
+      "if UgCore.Modules.IsEnabled('${1:accounts}') then",
+      "\t$0",
+      "end"
+    ]
+  }
+}

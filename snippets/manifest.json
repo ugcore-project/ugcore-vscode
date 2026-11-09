@@ -1,0 +1,38 @@
+{
+  "Manifest": {
+    "prefix": "ugmanifest",
+    "description": "fxmanifest.lua for a resource built on ug-core.",
+    "body": [
+      "fx_version 'cerulean'",
+      "game 'gta5'",
+      "lua54 'yes'",
+      "use_experimental_fxv2_oal 'yes'",
+      "",
+      "name '${1:my-resource}'",
+      "version '${2:1.0.0}'",
+      "ugcore_version '${3:1.0.0}'",
+      "",
+      "dependencies {",
+      "\t'ug-core',",
+      "}",
+      "",
+      "shared_scripts {",
+      "\t'@ug-core/import.lua',",
+      "\t$4",
+      "}",
+      "",
+      "server_scripts {",
+      "\t'server/*.lua',",
+      "}",
+      "",
+      "client_scripts {",
+      "\t'client/*.lua',",
+      "}$0"
+    ]
+  },
+  "Import": {
+    "prefix": "ugimport",
+    "description": "fxmanifest.lua: loads the UgCore API into this resource.",
+    "body": ["shared_script '@ug-core/import.lua'$0"]
+  }
+}

@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Node.js 24 runs the TypeScript scripts without a build step. Official build, no third-party action.
+  NODE_VERSION: 24.15.0
+  # Same LuaLS version as the VS Code extension and ug-core's CI.
+  LUALS_VERSION: 3.19.1
+  # overextended/fivem-lls-addon, pinned like in ug-core's CI.
+  FIVEM_LLS_ADDON_REF: 569364a2cceefef160c776e350a3b18407d191cf
+  # The ug-core the committed library is generated from. Pin to a commit SHA once ug-core is pushed.
+  UG_CORE_REF: dev
+
+jobs:
+  extension:
+    name: Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        run: |
+          curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/node-v${NODE_VERSION}-linux-x64/bin" >> "$GITHUB_PATH"
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Package
+        run: npm run package
+
+  library:
+    name: Library matches ug-core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        run: |
+          curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/node-v${NODE_VERSION}-linux-x64/bin" >> "$GITHUB_PATH"
+
+      - name: Fetch ug-core
+        run: |
+          git init -q "$RUNNER_TEMP/ug-core"
+          git -C "$RUNNER_TEMP/ug-core" fetch -q --depth 1 https://github.com/ugcore-project/ug-core "$UG_CORE_REF"
+          git -C "$RUNNER_TEMP/ug-core" checkout -q FETCH_HEAD
+
+      - name: Regenerate
+        run: npm run generate -- --core "$RUNNER_TEMP/ug-core"
+
+      - name: Compare
+        run: |
+          if ! git diff --exit-code -- library; then
+            echo "::error::library/ differs from ug-core at ${UG_CORE_REF}. Run npm run generate and commit the result."
+            exit 1
+          fi
+
+          if [ -n "$(git status --porcelain -- library)" ]; then
+            git status --porcelain -- library
+            echo "::error::library/ has files ug-core no longer produces, or misses new ones. Run npm run generate."
+            exit 1
+          fi
+
+  types:
+    name: LuaLS types check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        run: |
+          curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/node-v${NODE_VERSION}-linux-x64/bin" >> "$GITHUB_PATH"
+
+      - name: Install lua-language-server
+        run: |
+          mkdir -p "$RUNNER_TEMP/luals"
+          curl -fsSL "https://github.com/LuaLS/lua-language-server/releases/download/${LUALS_VERSION}/lua-language-server-${LUALS_VERSION}-linux-x64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP/luals"
+
+      - name: Fetch FiveM natives
+        run: |
+          git init -q "$RUNNER_TEMP/fivem-lls-addon"
+          git -C "$RUNNER_TEMP/fivem-lls-addon" fetch -q --depth 1 https://github.com/overextended/fivem-lls-addon "$FIVEM_LLS_ADDON_REF"
+          git -C "$RUNNER_TEMP/fivem-lls-addon" checkout -q FETCH_HEAD
+
+      - name: Check
+        env:
+          LUALS: ${{ runner.temp }}/luals/bin/lua-language-server
+          FIVEM_LLS_ADDON: ${{ runner.temp }}/fivem-lls-addon
+        run: npm run check:types

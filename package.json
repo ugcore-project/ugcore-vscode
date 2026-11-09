@@ -1,0 +1,98 @@
+{
+  "name": "ugcore-extension",
+  "displayName": "UgCore for VSCode - IntelliSense",
+  "description": "Types and snippets for the UgCore FiveM framework. Typed UgCore.* API, enums and hooks, with no setup.",
+  "version": "1.0.0",
+  "publisher": "ugcore-project",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ugcore-project/ugcore-vscode"
+  },
+  "engines": {
+    "vscode": "^1.99.0",
+    "node": ">=24"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Linters"
+  ],
+  "keywords": [
+    "Lua",
+    "FiveM",
+    "UgCore",
+    "IntelliSense"
+  ],
+  "extensionDependencies": [
+    "sumneko.lua"
+  ],
+  "activationEvents": [
+    "onLanguage:lua",
+    "workspaceContains:**/fxmanifest.lua"
+  ],
+  "icon": "logo.png",
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ugcore.apply",
+        "title": "Apply typings",
+        "category": "UgCore"
+      },
+      {
+        "command": "ugcore.info",
+        "title": "Show typings version",
+        "category": "UgCore"
+      }
+    ],
+    "configuration": {
+      "title": "UgCore",
+      "properties": {
+        "ugcore.typings": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "enumDescriptions": [
+            "On everywhere, except in a workspace that contains ug-core's own source, which types itself.",
+            "On everywhere, also in ug-core's own source. Declarations then exist twice and type checking weakens.",
+            "Off. The UgCore library is removed from Lua.workspace.library."
+          ],
+          "markdownDescription": "Adds the UgCore type library to `Lua.workspace.library`."
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "lua",
+        "path": "./snippets/lua.json"
+      },
+      {
+        "language": "lua",
+        "path": "./snippets/manifest.json"
+      }
+    ]
+  },
+  "scripts": {
+    "generate": "node scripts/generate.mts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "oxlint --deny-warnings",
+    "test": "vitest run",
+    "check:types": "node scripts/check-types.mts",
+    "package": "npm run build && vsce package --no-dependencies",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/vscode": "~1.99.0",
+    "@vscode/vsce": "^4.0.0",
+    "oxlint": "^1.75.0",
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.10"
+  }
+}

@@ -1,0 +1,13 @@
+.github/**
+.vscode/**
+node_modules/**
+scripts/**
+src/**
+tests/**
+out/**/*.map
+.editorconfig
+.gitattributes
+.gitignore
+CLAUDE.md
+tsconfig*.json
+*.vsix

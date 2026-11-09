@@ -1,0 +1,20 @@
+{
+  "ugCore": "1.0.0",
+  "modules": [
+    "identity",
+    "players",
+    "permissions",
+    "characters",
+    "accounts",
+    "jobs",
+    "gangs",
+    "sessions",
+    "commands",
+    "locale",
+    "items",
+    "inventory",
+    "weapons",
+    "shops"
+  ],
+  "hash": "758984caec724f7b"
+}
