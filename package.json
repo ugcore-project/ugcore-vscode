@@ -93,6 +93,6 @@
     "@vscode/vsce": "^4.0.0",
     "oxlint": "^1.75.0",
     "typescript": "~6.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.12"
   }
 }
